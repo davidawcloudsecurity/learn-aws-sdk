@@ -2,7 +2,9 @@ const { IAMClient, GetUserCommand, CreateUserCommand, CreatePolicyCommand, Creat
 const { STSClient, AssumeRoleCommand } = require("@aws-sdk/client-sts");
 const { ListServiceSpecificCredentialsCommand } = require("@aws-sdk/client-iam");
 
-const LOCAL_REGION = "ap-southeast-1"
+// Get the region from the Lambda environment variable (AWS_REGION)
+const LOCAL_REGION = process.env.AWS_REGION;
+//const LOCAL_REGION = "ap-southeast-1"
 const sts = new STSClient({ region: LOCAL_REGION })
 
 exports.handler = async (event) => {
