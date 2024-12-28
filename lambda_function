@@ -1,0 +1,435 @@
+const { IAMClient, GetUserCommand, CreateUserCommand, CreatePolicyCommand, CreatePolicyVersionCommand, DeletePolicyVersionCommand, AttachUserPolicyCommand, CreateRoleCommand, PutRolePolicyCommand, AttachRolePolicyCommand, DetachRolePolicyCommand, ListPolicyVersionsCommand, DeletePolicyCommand, DeleteRoleCommand, DeleteUserCommand, DetachUserPolicyCommand, ListAttachedRolePoliciesCommand, ListAttachedUserPoliciesCommand, ResetServiceSpecificCredentialCommand, CreateServiceSpecificCredentialCommand, GetRolePolicyCommand, ListEntitiesForPolicyCommand, GetPolicyVersionCommand, CreateAccessKeyCommand, DeleteAccessKeyCommand, UpdateAssumeRolePolicyCommand, GetRoleCommand, GetPolicyCommand, GetUserPolicyCommand } = require("@aws-sdk/client-iam")
+const { STSClient, AssumeRoleCommand } = require("@aws-sdk/client-sts");
+const { ListServiceSpecificCredentialsCommand } = require("@aws-sdk/client-iam");
+
+const LOCAL_REGION = "ap-southeast-1"
+const sts = new STSClient({ region: LOCAL_REGION })
+
+exports.handler = async (event) => {
+    console.log("iam invoke");
+    console.log(event);
+
+    const { isProject, roleArn } = event
+
+    let res;
+
+    try {
+        
+        const cred = {}
+        let iam
+        
+        if (isProject) {
+
+            const assumeRoleCommand = new AssumeRoleCommand({
+                RoleArn: roleArn,
+                RoleSessionName: 'platform-lambda-session'
+            })
+            const session = await sts.send(assumeRoleCommand)
+            const sessionData = session.Credentials
+
+            cred.accessKeyId = sessionData.AccessKeyId
+            cred.secretAccessKey = sessionData.SecretAccessKey
+            cred.sessionToken = sessionData.SessionToken
+            
+            iam = new IAMClient({
+                region: LOCAL_REGION,
+                credentials: cred
+            })
+            
+        } else {
+            iam = new IAMClient({
+                region: LOCAL_REGION
+            })
+        }
+
+        if (event.funcOption === 'get_user') {
+            console.log("get_user")
+
+            const getUserParams = {
+                UserName: event.UserName
+            }
+
+            const getUserCommand = new GetUserCommand(getUserParams);
+            res = await iam.send(getUserCommand)
+
+            console.log("success")
+        } else if (event.funcOption === 'create_user') {
+            console.log("create_user")
+
+            const createUserParams = {
+                UserName: event.UserName
+            }
+
+            const createUserCommand = new CreateUserCommand(createUserParams);
+            res = await iam.send(createUserCommand)
+
+            console.log("success")
+        } else if (event.funcOption === 'create_policy') {
+            console.log("create_policy")
+
+            const createPolicyParams = {
+                PolicyName: event.PolicyName,
+                PolicyDocument: event.PolicyDocument
+            }
+
+            if (event.SetAsDefault) {
+                createPolicyParams.SetAsDefault = event.SetAsDefault
+            }
+
+            const createPolicyCommand = new CreatePolicyCommand(createPolicyParams);
+            res = await iam.send(createPolicyCommand)
+
+            console.log("success")
+        } else if (event.funcOption === 'create_policy_version') {
+            console.log("create_policy_version")
+
+            const createPolicyVersionParams = {
+                PolicyArn: event.PolicyArn,
+                PolicyDocument: event.PolicyDocument,
+                SetAsDefault: event.SetAsDefault
+            }
+
+            const createPolicyVersionCommand = new CreatePolicyVersionCommand(createPolicyVersionParams);
+            res = await iam.send(createPolicyVersionCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'delete_policy_version') {
+            console.log("delete_policy_version")
+
+            const deletePolicyVersionParams = {
+                PolicyArn: event.PolicyArn
+            }
+
+            if (event.PolicyDocument) {
+                deletePolicyVersionParams.PolicyDocument = event.PolicyDocument
+            }
+
+            if (event.SetAsDefault) {
+                deletePolicyVersionParams.SetAsDefault = event.SetAsDefault
+            }
+
+            if (event.VersionId) {
+                deletePolicyVersionParams.VersionId = event.VersionId
+            }
+
+            const deletePolicyVersionCommand = new DeletePolicyVersionCommand(deletePolicyVersionParams);
+            res = await iam.send(deletePolicyVersionCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'attach_user_policy') {
+            console.log("attach_user_policy")
+
+            const attachUserPolicyParams = {
+                UserName: event.UserName,
+                PolicyArn: event.PolicyArn
+            }
+
+            const attachUserPolicyCommand = new AttachUserPolicyCommand(attachUserPolicyParams);
+            res = await iam.send(attachUserPolicyCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'create_role') {
+            console.log("create_role")
+
+            const createRoleParams = {
+                Path: event.Path,
+                AssumeRolePolicyDocument: event.AssumeRolePolicyDocument,
+                RoleName: event.RoleName
+            }
+
+            const createRoleCommand = new CreateRoleCommand(createRoleParams);
+            res = await iam.send(createRoleCommand)
+
+            console.log("success")
+        } else if (event.funcOption === 'put_role_policy') {
+
+            console.log("put_role_policy")
+
+            const putRolePolicyParams = {
+                RoleName: event.RoleName,
+                PolicyName: event.PolicyName,
+                PolicyDocument: event.PolicyDocument
+            }
+
+            const putRolePolicyCommand = new PutRolePolicyCommand(putRolePolicyParams);
+            res = await iam.send(putRolePolicyCommand)
+            
+            console.log("success")
+            
+        } else if (event.funcOption === 'attach_role_policy') {
+            console.log("attach_role_policy")
+
+            const attachRolePolicyParams = {
+                RoleName: event.RoleName,
+                PolicyArn: event.PolicyArn
+            }
+            
+            const attachRolePolicyCommand = new AttachRolePolicyCommand(attachRolePolicyParams);
+            res = await iam.send(attachRolePolicyCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'detach_role_policy') {
+            console.log("detach_role_policy")
+
+            const detachRolePolicyParams = {
+                RoleName: event.RoleName,
+                PolicyArn: event.PolicyArn
+            }
+
+            const detachRolePolicyCommand = new DetachRolePolicyCommand(detachRolePolicyParams);
+            res = await iam.send(detachRolePolicyCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'list_policy_versions') {
+            console.log("list_policy_versions")
+
+            const listPolicyVersionsParams = {
+                PolicyArn: event.PolicyArn
+            }
+
+            const listPolicyVersionsCommand = new ListPolicyVersionsCommand(listPolicyVersionsParams);
+            res = await iam.send(listPolicyVersionsCommand)
+
+            console.log("success")
+        } else if (event.funcOption === 'delete_policy') {
+            console.log("delete_policy")
+
+            const deletePolicyParams = {
+                PolicyArn: event.PolicyArn
+            }
+
+            const deletePolicyCommand = new DeletePolicyCommand(deletePolicyParams);
+            res = await iam.send(deletePolicyCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'delete_role') {
+            console.log("delete_role")
+
+            const deleteRoleParams = {
+                RoleName: event.RoleName
+            }
+
+            const deleteRoleCommand = new DeleteRoleCommand(deleteRoleParams);
+            res = await iam.send(deleteRoleCommand)
+
+            console.log("success")
+        } else if (event.funcOption === 'delete_user') {
+            console.log("delete_user")
+
+            const deleteUserParams = {
+                UserName: event.UserName
+            }
+
+            const deleteUserCommand = new DeleteUserCommand(deleteUserParams);
+            res = await iam.send(deleteUserCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'detach_user_policy') {
+            console.log("detach_user_policy")
+
+            const detachUserPolicyParams = {
+                UserName: event.UserName,
+                PolicyArn: event.PolicyArn
+            }
+
+            const detachUserPolicyCommand = new DetachUserPolicyCommand(detachUserPolicyParams);
+            res = await iam.send(detachUserPolicyCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'list_attached_role_policies') {
+            console.log("list_attached_role_policies")
+
+            const listAttachedRolePoliciesParams = {
+                RoleName: event.RoleName
+            }
+
+            const listAttachedRolePoliciesCommand = new ListAttachedRolePoliciesCommand(listAttachedRolePoliciesParams);
+            res = await iam.send(listAttachedRolePoliciesCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'list_attached_user_policies') {
+            console.log("list_attached_user_policies")
+
+            const listAttachedUserPoliciesParams = {
+                UserName: event.UserName
+            }
+
+            const listAttachedUserPoliciesCommand = new ListAttachedUserPoliciesCommand(listAttachedUserPoliciesParams);
+            res = await iam.send(listAttachedUserPoliciesCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'reset_service_specific_credential') {
+            console.log("reset_service_specific_credential")
+            console.log({
+                UserName: event.UserName,
+                ServiceName: event.ServiceName
+            });
+
+            if (!event.ServiceName) {
+                // Default to CodeCommit if not specified
+                event.ServiceName = "codecommit.amazonaws.com";
+            }
+            // Check if the ServiceSpecificCredentialId exists
+            const describeServiceSpecificCredentialParams = {
+                UserName: event.UserName,
+                ServiceName: event.ServiceName  // Add this line
+            };
+
+            try {
+                const describeCommand = new ListServiceSpecificCredentialsCommand(describeServiceSpecificCredentialParams);
+                const describeResponse = await iam.send(describeCommand);
+
+                if (describeResponse.ServiceSpecificCredentials && describeResponse.ServiceSpecificCredentials.length > 0) {
+                    // The ID exists, so proceed with the reset
+                    const resetServiceSpecificCredentialParams = {
+                        UserName: event.UserName,
+                        ServiceSpecificCredentialId: event.ServiceSpecificCredentialId
+                    };
+
+                    const resetServiceSpecificCredentialCommand = new ResetServiceSpecificCredentialCommand(resetServiceSpecificCredentialParams);
+                    res = await iam.send(resetServiceSpecificCredentialCommand);
+                    console.log("Reset successful");
+                } else {
+                    // The ID doesn't exist, handle accordingly (maybe create a new one)
+                    console.log("ServiceSpecificCredentialId not found, creating a new one");
+                    const createServiceSpecificCredentialParams = {
+                        UserName: event.UserName,
+                        ServiceName: event.ServiceName
+                    };
+
+                    const createServiceSpecificCredentialCommand = new CreateServiceSpecificCredentialCommand(createServiceSpecificCredentialParams);
+                    res = await iam.send(createServiceSpecificCredentialCommand);
+                    console.log("New service-specific credential created successfully");
+                }
+            } catch (error) {
+                console.error("Error while checking or resetting credentials: ", error);
+                throw error;  // Add this to propagate the error properly
+            }
+        } else if (event.funcOption === 'create_service_specific_credential') {
+            console.log("create_service_specific_credential")
+
+            const createServiceSpecificCredentialParams = {
+                UserName: event.UserName,
+                ServiceName: event.ServiceName
+            }
+
+            const createServiceSpecificCredentialCommand = new CreateServiceSpecificCredentialCommand(createServiceSpecificCredentialParams);
+            res = await iam.send(createServiceSpecificCredentialCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'get_role_policy') {
+            console.log("get_role_policy")
+
+            const getRolePolicyParams = {
+                RoleName: event.RoleName,
+                PolicyName: event.PolicyName
+            }
+
+            const getRolePolicyCommand = new GetRolePolicyCommand(getRolePolicyParams);
+            res = await iam.send(getRolePolicyCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'list_entities_for_policy') {
+            console.log("list_entities_for_policy")
+
+            const listEntitiesForPolicyParams = {
+                PolicyArn: event.PolicyArn
+            }
+
+            const listEntitiesForPolicyCommand = new ListEntitiesForPolicyCommand(listEntitiesForPolicyParams);
+            res = await iam.send(listEntitiesForPolicyCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'get_policy_version') {
+            console.log("get_policy_version")
+
+            const getPolicyVersionParams = {
+                PolicyArn: event.PolicyArn,
+                VersionId: event.VersionId
+            }
+
+            const getPolicyVersionCommand = new GetPolicyVersionCommand(getPolicyVersionParams);
+            res = await iam.send(getPolicyVersionCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'create_access_key') {
+            console.log("create_access_key")
+
+            const createAccessKeyParams = {
+                UserName: event.UserName
+            }
+
+            const createAccessKeyCommand = new CreateAccessKeyCommand(createAccessKeyParams);
+            res = await iam.send(createAccessKeyCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'delete_access_key') {
+            console.log("delete_access_key")
+
+            const deleteAccessKeyParams = {
+                AccessKeyId: event.AccessKeyId,
+                UserName: event.UserName,
+            }
+
+            const deleteAccessKeyCommand = new DeleteAccessKeyCommand(deleteAccessKeyParams);
+            res = await iam.send(deleteAccessKeyCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'update_assume_role_policy') {
+            console.log("update_assume_role_policy")
+
+            const updateAssumeRolePolicyParams = {
+                RoleName: event.RoleName,
+                PolicyDocument: event.PolicyDocument
+            }
+
+            const updateAssumeRolePolicyCommand = new UpdateAssumeRolePolicyCommand(updateAssumeRolePolicyParams);
+            res = await iam.send(updateAssumeRolePolicyCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'get_role') {
+            console.log("get_role")
+
+            const getRoleParams = {
+                RoleName: event.RoleName
+            }
+
+            const getRoleCommand = new GetRoleCommand(getRoleParams);
+            res = await iam.send(getRoleCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'get_policy') {
+            console.log("get_policy")
+
+            const getPolicyParams = {
+                PolicyArn: event.PolicyArn
+            }
+
+            const getPolicyCommand = new GetPolicyCommand(getPolicyParams);
+            res = await iam.send(getPolicyCommand)
+            
+            console.log("success")
+        } else if (event.funcOption === 'get_user_policy') {
+            console.log("get_user_policy")
+
+            const getUserPolicyParams = {
+                UserName: event.UserName,
+                PolicyName: event.PolicyName
+            }
+
+            const getUserPolicyCommand = new GetUserPolicyCommand(getUserPolicyParams);
+            res = await iam.send(getUserPolicyCommand)
+            
+            console.log("success")
+        }
+    } catch (err) {
+        console.error(JSON.stringify(err));
+        const errorBody = {
+            ...err,
+            Error: true
+        }
+        res = errorBody
+    }
+
+    return res;
+};
